@@ -1,22 +1,4 @@
-// エンターキーでメッセージ送信（Shiftキー併用時は改行）
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-        
-        // Ctrl+Vでクリップボードから画像貼り付け
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'v' && isConnected) {
-                if (document.activeElement === messageInput) {
-                    // テキストエリアにフォーカスがある場合は通常の貼り付けを許可
-                    return;
-                }
-                e.preventDefault();
-                pasteFromClipboard();
-            }
-        });<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
