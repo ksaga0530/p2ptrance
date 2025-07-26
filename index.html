@@ -1,4 +1,22 @@
-<!DOCTYPE html>
+// エンターキーでメッセージ送信（Shiftキー併用時は改行）
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Ctrl+Vでクリップボードから画像貼り付け
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v' && isConnected) {
+                if (document.activeElement === messageInput) {
+                    // テキストエリアにフォーカスがある場合は通常の貼り付けを許可
+                    return;
+                }
+                e.preventDefault();
+                pasteFromClipboard();
+            }
+        });<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -243,6 +261,60 @@
             margin-top: 5px;
         }
         
+        .file-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 24px;
+        }
+        
+        .file-message {
+            max-width: 300px;
+        }
+        
+        .file-info-display {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 5px 0;
+        }
+        
+        .file-download {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        .file-download:hover {
+            background: #0056b3;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s ease;
+        }
+        
         .message-history {
             background: #f8f9ff;
             border-radius: 15px;
@@ -336,28 +408,32 @@
         
         <div class="message-section">
             <div class="card">
-                <h3>💬 メッセージ・画像送信</h3>
+                <h3>💬 メッセージ・ファイル送信</h3>
                 
                 <div class="drop-zone" id="dropZone">
-                    📎 ここに画像をドラッグ&ドロップ、または下のボタンで選択
+                    📎 ここにファイルをドラッグ&ドロップ、または下のボタンで選択
                 </div>
                 
                 <div class="input-area">
                     <textarea id="messageInput" placeholder="メッセージを入力してください..." disabled></textarea>
                     <div class="input-buttons">
-                        <button class="input-btn file-btn" onclick="selectFile()" title="画像を選択" disabled id="fileBtn">📷</button>
+                        <button class="input-btn file-btn" onclick="selectFile()" title="ファイルを選択" disabled id="fileBtn">📁</button>
                         <button class="input-btn paste-btn" onclick="pasteFromClipboard()" title="クリップボードから貼り付け" disabled id="pasteBtn">📋</button>
                     </div>
                 </div>
                 
-                <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+                <input type="file" id="fileInput" onchange="handleFileSelect(event)">
                 
-                <div id="imagePreview" style="display: none;">
+                <div id="filePreview" style="display: none;">
                     <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
-                        <img id="previewImg" class="image-preview">
+                        <div id="previewContainer">
+                            <img id="previewImg" class="image-preview" style="display: none;">
+                            <div id="fileIcon" class="file-icon" style="display: none;">📄</div>
+                        </div>
                         <div>
                             <div id="fileName"></div>
                             <div id="fileSize" class="file-info"></div>
+                            <div id="fileType" class="file-info"></div>
                             <button onclick="clearPreview()" style="margin-top: 5px; padding: 5px 10px; font-size: 0.8em;">削除</button>
                         </div>
                     </div>
@@ -401,10 +477,12 @@
         const qrCodeEl = document.getElementById('qrCode');
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const imagePreview = document.getElementById('imagePreview');
+        const filePreview = document.getElementById('filePreview');
         const previewImg = document.getElementById('previewImg');
+        const fileIcon = document.getElementById('fileIcon');
         const fileName = document.getElementById('fileName');
         const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
         const imageOverlay = document.getElementById('imageOverlay');
         const overlayImg = document.getElementById('overlayImg');
         
@@ -577,7 +655,9 @@
                 if (data.type === 'text') {
                     addMessage(data.message, 'received', data.timestamp);
                 } else if (data.type === 'image') {
-                    addImageMessage(data.imageData, data.filename, data.filesize, 'received', data.timestamp);
+                    addImageMessage(data.fileData, data.filename, data.filesize, 'received', data.timestamp, data.message);
+                } else if (data.type === 'file') {
+                    addFileMessage(data.fileData, data.filename, data.filesize, data.filetype, 'received', data.timestamp, data.message);
                 }
             });
             
@@ -605,16 +685,19 @@
             
             if (!isConnected) return;
             
-            // 画像が選択されている場合
+            // ファイルが選択されている場合
             if (selectedFile) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const imageData = e.target.result;
+                    const fileData = e.target.result;
+                    const isImage = selectedFile.type.startsWith('image/');
+                    
                     const data = {
-                        type: 'image',
-                        imageData: imageData,
+                        type: isImage ? 'image' : 'file',
+                        fileData: fileData,
                         filename: selectedFile.name,
                         filesize: formatFileSize(selectedFile.size),
+                        filetype: selectedFile.type,
                         timestamp: timestamp
                     };
                     
@@ -624,7 +707,12 @@
                     }
                     
                     connection.send(data);
-                    addImageMessage(imageData, selectedFile.name, formatFileSize(selectedFile.size), 'sent', timestamp, message);
+                    
+                    if (isImage) {
+                        addImageMessage(fileData, selectedFile.name, formatFileSize(selectedFile.size), 'sent', timestamp, message);
+                    } else {
+                        addFileMessage(fileData, selectedFile.name, formatFileSize(selectedFile.size), selectedFile.type, 'sent', timestamp, message);
+                    }
                     
                     clearPreview();
                     messageInput.value = '';
@@ -702,28 +790,140 @@
         
         function handleFileSelect(event) {
             const file = event.target.files[0];
-            if (file && file.type.startsWith('image/')) {
+            if (file) {
                 selectedFile = file;
-                showImagePreview(file);
-            } else {
-                alert('画像ファイルを選択してください。');
+                showFilePreview(file);
             }
         }
         
-        function showImagePreview(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                fileName.textContent = file.name;
-                fileSize.textContent = formatFileSize(file.size);
-                imagePreview.style.display = 'block';
+        function showFilePreview(file) {
+            const isImage = file.type.startsWith('image/');
+            
+            if (isImage) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    fileIcon.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewImg.style.display = 'none';
+                fileIcon.style.display = 'flex';
+                fileIcon.textContent = getFileIcon(file.type);
+            }
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileType.textContent = getFileTypeName(file.type);
+            filePreview.style.display = 'block';
+        }
+        
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) return '🖼️';
+            if (mimeType.startsWith('video/')) return '🎥';
+            if (mimeType.startsWith('audio/')) return '🎵';
+            if (mimeType.includes('pdf')) return '📕';
+            if (mimeType.includes('word')) return '📘';
+            if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📗';
+            if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙';
+            if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '🗜️';
+            if (mimeType.includes('text')) return '📄';
+            if (mimeType.includes('json') || mimeType.includes('xml')) return '⚙️';
+            return '📄';
+        }
+        
+        function getFileTypeName(mimeType) {
+            const typeMap = {
+                'application/pdf': 'PDF文書',
+                'application/msword': 'Word文書',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word文書',
+                'application/vnd.ms-excel': 'Excel文書',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel文書',
+                'application/vnd.ms-powerpoint': 'PowerPoint文書',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint文書',
+                'application/zip': 'ZIP圧縮ファイル',
+                'application/x-rar-compressed': 'RAR圧縮ファイル',
+                'text/plain': 'テキストファイル',
+                'text/csv': 'CSVファイル',
+                'application/json': 'JSONファイル',
+                'text/xml': 'XMLファイル'
             };
-            reader.readAsDataURL(file);
+            
+            if (mimeType.startsWith('image/')) return '画像ファイル';
+            if (mimeType.startsWith('video/')) return '動画ファイル';
+            if (mimeType.startsWith('audio/')) return '音声ファイル';
+            
+            return typeMap[mimeType] || 'ファイル';
+        }
+        
+        function addFileMessage(fileData, filename, filesize, filetype, type, timestamp, message = '') {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type} file-message`;
+            
+            const fileInfoEl = document.createElement('div');
+            fileInfoEl.className = 'file-info-display';
+            
+            const fileIconEl = document.createElement('div');
+            fileIconEl.style.fontSize = '40px';
+            fileIconEl.style.textAlign = 'center';
+            fileIconEl.style.marginBottom = '10px';
+            fileIconEl.textContent = getFileIcon(filetype);
+            
+            const fileNameEl = document.createElement('div');
+            fileNameEl.style.fontWeight = 'bold';
+            fileNameEl.style.marginBottom = '5px';
+            fileNameEl.textContent = filename;
+            
+            const fileDetailsEl = document.createElement('div');
+            fileDetailsEl.className = 'file-info';
+            fileDetailsEl.innerHTML = `${getFileTypeName(filetype)} • ${filesize}`;
+            
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'file-download';
+            downloadBtn.textContent = 'ダウンロード';
+            downloadBtn.onclick = () => downloadFile(fileData, filename);
+            
+            fileInfoEl.appendChild(fileIconEl);
+            fileInfoEl.appendChild(fileNameEl);
+            fileInfoEl.appendChild(fileDetailsEl);
+            fileInfoEl.appendChild(downloadBtn);
+            
+            const timeEl = document.createElement('div');
+            timeEl.className = 'message-time';
+            timeEl.textContent = timestamp;
+            
+            messageEl.appendChild(fileInfoEl);
+            
+            // メッセージがある場合は追加
+            if (message) {
+                const messageText = document.createElement('div');
+                messageText.textContent = message;
+                messageText.style.marginTop = '10px';
+                messageText.style.padding = '10px';
+                messageText.style.background = 'rgba(255,255,255,0.5)';
+                messageText.style.borderRadius = '8px';
+                messageEl.appendChild(messageText);
+            }
+            
+            messageEl.appendChild(timeEl);
+            
+            messageHistory.appendChild(messageEl);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        function downloadFile(fileData, filename) {
+            const link = document.createElement('a');
+            link.href = fileData;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
         
         function clearPreview() {
             selectedFile = null;
-            imagePreview.style.display = 'none';
+            filePreview.style.display = 'none';
             fileInput.value = '';
         }
         
@@ -782,12 +982,8 @@
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 const file = files[0];
-                if (file.type.startsWith('image/')) {
-                    selectedFile = file;
-                    showImagePreview(file);
-                } else {
-                    alert('画像ファイルをドロップしてください。');
-                }
+                selectedFile = file;
+                showFilePreview(file);
             }
         });
         
