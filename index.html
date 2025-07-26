@@ -318,10 +318,14 @@
         }
         
         function createQRCode(peerId) {
+            // 現在のページURLにpeerIdをパラメータとして追加
+            const currentUrl = window.location.href.split('?')[0]; // クエリパラメータを除去
+            const qrUrl = `${currentUrl}?connect=${peerId}`;
+            
             const canvas = document.createElement('canvas');
             const qr = new QRious({
                 element: canvas,
-                value: peerId,
+                value: qrUrl,
                 size: 200,
                 foreground: '#667eea',
                 background: 'white'
@@ -331,11 +335,36 @@
             qrCodeEl.appendChild(canvas);
             
             const label = document.createElement('div');
-            label.textContent = 'QRコードをスキャンして接続';
+            label.textContent = 'QRコードをスキャンして自動接続';
             label.style.marginTop = '10px';
             label.style.fontSize = '0.9em';
             label.style.color = '#666';
             qrCodeEl.appendChild(label);
+            
+            // URLも表示（手動コピー用）
+            const urlDisplay = document.createElement('div');
+            urlDisplay.textContent = qrUrl;
+            urlDisplay.style.marginTop = '10px';
+            urlDisplay.style.fontSize = '0.8em';
+            urlDisplay.style.color = '#999';
+            urlDisplay.style.wordBreak = 'break-all';
+            urlDisplay.style.padding = '8px';
+            urlDisplay.style.background = '#f8f9fa';
+            urlDisplay.style.borderRadius = '5px';
+            urlDisplay.style.cursor = 'pointer';
+            urlDisplay.title = 'クリックしてコピー';
+            
+            urlDisplay.onclick = () => {
+                navigator.clipboard.writeText(qrUrl).then(() => {
+                    const originalText = urlDisplay.textContent;
+                    urlDisplay.textContent = '✅ URLをコピーしました';
+                    setTimeout(() => {
+                        urlDisplay.textContent = originalText;
+                    }, 2000);
+                });
+            };
+            
+            qrCodeEl.appendChild(urlDisplay);
         }
         
         function connectToPeer() {
@@ -470,7 +499,29 @@
             connectBtn.disabled = false;
         }
         
-        // エンターキーでメッセージ送信
+        // ページ読み込み時にURLパラメータをチェック
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const connectToPeerId = urlParams.get('connect');
+            
+            if (connectToPeerId) {
+                // URLパラメータに接続先IDがある場合、自動で接続開始
+                updateStatus('QRコードから自動接続を開始中...', 'connecting');
+                peerIdInput.value = connectToPeerId;
+                
+                // 少し遅延させてDOM要素が準備されるのを待つ
+                setTimeout(() => {
+                    connectToPeer();
+                    
+                    // 接続後にURLをクリーンアップ（オプション）
+                    const cleanUrl = window.location.href.split('?')[0];
+                    window.history.replaceState({}, document.title, cleanUrl);
+                    
+                    // 自動接続の説明を表示
+                    addSystemMessage('QRコードから自動接続を開始しました。');
+                }, 1000);
+            }
+        });
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
