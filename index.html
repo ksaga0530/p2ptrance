@@ -1,4 +1,22 @@
-<!DOCTYPE html>
+// エンターキーでメッセージ送信（Shiftキー併用時は改行）
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Ctrl+Vでクリップボードから画像貼り付け
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v' && isConnected) {
+                if (document.activeElement === messageInput) {
+                    // テキストエリアにフォーカスがある場合は通常の貼り付けを許可
+                    return;
+                }
+                e.preventDefault();
+                pasteFromClipboard();
+            }
+        });<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -131,10 +149,116 @@
             margin-top: 30px;
         }
         
+        .input-area {
+            position: relative;
+        }
+        
         textarea {
             height: 120px;
             resize: vertical;
             font-family: inherit;
+            padding-right: 120px; /* ボタン用のスペース */
+        }
+        
+        .input-buttons {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .input-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+        
+        .input-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .file-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .paste-btn {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .drop-zone {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .drop-zone.dragover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            color: #667eea;
+        }
+        
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        
+        .image-message {
+            max-width: 300px;
+        }
+        
+        .image-message img {
+            max-width: 100%;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .image-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: pointer;
+        }
+        
+        .image-overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
+        
+        .file-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
         }
         
         .message-history {
@@ -230,8 +354,33 @@
         
         <div class="message-section">
             <div class="card">
-                <h3>💬 メッセージ</h3>
-                <textarea id="messageInput" placeholder="メッセージを入力してください..." disabled></textarea>
+                <h3>💬 メッセージ・画像送信</h3>
+                
+                <div class="drop-zone" id="dropZone">
+                    📎 ここに画像をドラッグ&ドロップ、または下のボタンで選択
+                </div>
+                
+                <div class="input-area">
+                    <textarea id="messageInput" placeholder="メッセージを入力してください..." disabled></textarea>
+                    <div class="input-buttons">
+                        <button class="input-btn file-btn" onclick="selectFile()" title="画像を選択" disabled id="fileBtn">📷</button>
+                        <button class="input-btn paste-btn" onclick="pasteFromClipboard()" title="クリップボードから貼り付け" disabled id="pasteBtn">📋</button>
+                    </div>
+                </div>
+                
+                <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+                
+                <div id="imagePreview" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                        <img id="previewImg" class="image-preview">
+                        <div>
+                            <div id="fileName"></div>
+                            <div id="fileSize" class="file-info"></div>
+                            <button onclick="clearPreview()" style="margin-top: 5px; padding: 5px 10px; font-size: 0.8em;">削除</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <button onclick="sendMessage()" id="sendBtn" disabled>送信</button>
                 
                 <div class="message-history" id="messageHistory">
@@ -240,6 +389,11 @@
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- 画像拡大表示用オーバーレイ -->
+        <div class="image-overlay" id="imageOverlay" onclick="closeImageOverlay()">
+            <img id="overlayImg">
         </div>
     </div>
 
@@ -250,16 +404,27 @@
         let peer = null;
         let connection = null;
         let isConnected = false;
+        let selectedFile = null;
         
         const statusEl = document.getElementById('status');
         const createBtn = document.getElementById('createBtn');
         const connectBtn = document.getElementById('connectBtn');
         const sendBtn = document.getElementById('sendBtn');
+        const fileBtn = document.getElementById('fileBtn');
+        const pasteBtn = document.getElementById('pasteBtn');
         const messageInput = document.getElementById('messageInput');
         const messageHistory = document.getElementById('messageHistory');
         const myPeerIdEl = document.getElementById('myPeerId');
         const peerIdInput = document.getElementById('peerIdInput');
         const qrCodeEl = document.getElementById('qrCode');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const imageOverlay = document.getElementById('imageOverlay');
+        const overlayImg = document.getElementById('overlayImg');
         
         function updateStatus(message, type) {
             statusEl.textContent = message;
@@ -416,6 +581,8 @@
                 updateStatus('接続が確立されました！', 'connected');
                 messageInput.disabled = false;
                 sendBtn.disabled = false;
+                fileBtn.disabled = false;
+                pasteBtn.disabled = false;
                 connectBtn.textContent = '接続済み';
                 createBtn.disabled = true;
                 
@@ -425,7 +592,11 @@
             
             connection.on('data', (data) => {
                 console.log('Received:', data);
-                addMessage(data.message, 'received', data.timestamp);
+                if (data.type === 'text') {
+                    addMessage(data.message, 'received', data.timestamp);
+                } else if (data.type === 'image') {
+                    addImageMessage(data.imageData, data.filename, data.filesize, 'received', data.timestamp);
+                }
             });
             
             connection.on('close', () => {
@@ -433,6 +604,8 @@
                 updateStatus('接続が切断されました', 'disconnected');
                 messageInput.disabled = true;
                 sendBtn.disabled = true;
+                fileBtn.disabled = true;
+                pasteBtn.disabled = true;
                 resetButtons();
                 addSystemMessage('接続が切断されました。');
             });
@@ -446,17 +619,48 @@
         
         function sendMessage() {
             const message = messageInput.value.trim();
-            if (!message || !isConnected) return;
-            
             const timestamp = new Date().toLocaleTimeString();
-            const data = {
-                message: message,
-                timestamp: timestamp
-            };
             
-            connection.send(data);
-            addMessage(message, 'sent', timestamp);
-            messageInput.value = '';
+            if (!isConnected) return;
+            
+            // 画像が選択されている場合
+            if (selectedFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageData = e.target.result;
+                    const data = {
+                        type: 'image',
+                        imageData: imageData,
+                        filename: selectedFile.name,
+                        filesize: formatFileSize(selectedFile.size),
+                        timestamp: timestamp
+                    };
+                    
+                    // メッセージがあれば一緒に送信
+                    if (message) {
+                        data.message = message;
+                    }
+                    
+                    connection.send(data);
+                    addImageMessage(imageData, selectedFile.name, formatFileSize(selectedFile.size), 'sent', timestamp, message);
+                    
+                    clearPreview();
+                    messageInput.value = '';
+                };
+                reader.readAsDataURL(selectedFile);
+            }
+            // テキストメッセージのみの場合
+            else if (message) {
+                const data = {
+                    type: 'text',
+                    message: message,
+                    timestamp: timestamp
+                };
+                
+                connection.send(data);
+                addMessage(message, 'sent', timestamp);
+                messageInput.value = '';
+            }
         }
         
         function addMessage(message, type, timestamp) {
@@ -476,6 +680,134 @@
             messageHistory.appendChild(messageEl);
             messageHistory.scrollTop = messageHistory.scrollHeight;
         }
+        
+        function addImageMessage(imageData, filename, filesize, type, timestamp, message = '') {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type} image-message`;
+            
+            const imgEl = document.createElement('img');
+            imgEl.src = imageData;
+            imgEl.onclick = () => showImageOverlay(imageData);
+            
+            const fileInfoEl = document.createElement('div');
+            fileInfoEl.className = 'file-info';
+            fileInfoEl.textContent = `${filename} (${filesize})`;
+            
+            const timeEl = document.createElement('div');
+            timeEl.className = 'message-time';
+            timeEl.textContent = timestamp;
+            
+            messageEl.appendChild(imgEl);
+            messageEl.appendChild(fileInfoEl);
+            
+            // メッセージがある場合は追加
+            if (message) {
+                const messageText = document.createElement('div');
+                messageText.textContent = message;
+                messageText.style.marginTop = '5px';
+                messageEl.appendChild(messageText);
+            }
+            
+            messageEl.appendChild(timeEl);
+            
+            messageHistory.appendChild(messageEl);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        function selectFile() {
+            fileInput.click();
+        }
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                selectedFile = file;
+                showImagePreview(file);
+            } else {
+                alert('画像ファイルを選択してください。');
+            }
+        }
+        
+        function showImagePreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function clearPreview() {
+            selectedFile = null;
+            imagePreview.style.display = 'none';
+            fileInput.value = '';
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function showImageOverlay(imageData) {
+            overlayImg.src = imageData;
+            imageOverlay.style.display = 'flex';
+        }
+        
+        function closeImageOverlay() {
+            imageOverlay.style.display = 'none';
+        }
+        
+        async function pasteFromClipboard() {
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await clipboardItem.getType(type);
+                            const file = new File([blob], `clipboard-image-${Date.now()}.png`, { type: type });
+                            selectedFile = file;
+                            showImagePreview(file);
+                            return;
+                        }
+                    }
+                }
+                alert('クリップボードに画像が見つかりませんでした。');
+            } catch (err) {
+                console.error('クリップボードアクセスエラー:', err);
+                alert('クリップボードにアクセスできませんでした。ブラウザの設定を確認してください。');
+            }
+        }
+        
+        // ドラッグ&ドロップ機能
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    selectedFile = file;
+                    showImagePreview(file);
+                } else {
+                    alert('画像ファイルをドロップしてください。');
+                }
+            }
+        });
         
         function addSystemMessage(message) {
             const messageEl = document.createElement('div');
