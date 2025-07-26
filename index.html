@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P テキスト共有</title>
+    <title>P2P File Share</title>
     <style>
         * {
             margin: 0;
@@ -13,122 +13,213 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f9fafb;
             min-height: 100vh;
-            padding: 20px;
+            color: #111827;
+        }
+        
+        /* Navigation */
+        .nav {
+            border-bottom: 1px solid #e5e7eb;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        
+        .nav-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            items: center;
+            justify-content: space-between;
+        }
+        
+        .nav h1 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: -0.025em;
+            color: #111827;
+        }
+        
+        .nav-status {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .status-text {
+            color: #6b7280;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
         }
         
         .container {
-            max-width: 800px;
+            max-width: 1280px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
+            padding: 3rem 2rem;
         }
         
-        h1 {
+        /* Header */
+        .header {
             text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+            margin-bottom: 4rem;
+        }
+        
+        .header h2 {
+            font-size: 3rem;
+            font-weight: 200;
+            color: #111827;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+        
+        .header p {
+            font-size: 1.25rem;
+            color: #6b7280;
             font-weight: 300;
+            max-width: 32rem;
+            margin: 0 auto;
+            line-height: 1.6;
         }
         
-        .status {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .status.disconnected {
-            background: #fee;
-            color: #c33;
-            border: 2px solid #fcc;
-        }
-        
-        .status.connecting {
-            background: #fff3cd;
-            color: #856404;
-            border: 2px solid #ffeaa7;
-        }
-        
-        .status.connected {
-            background: #d4edda;
-            color: #155724;
-            border: 2px solid #c3e6cb;
-        }
-        
-        .connection-section {
+        /* Main Grid */
+        .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        @media (max-width: 768px) {
-            .connection-section {
-                grid-template-columns: 1fr;
-            }
+            gap: 3rem;
+            margin-bottom: 3rem;
         }
         
         .card {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 2px solid #f0f0f0;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.5s ease;
         }
         
-        .card h3 {
-            color: #555;
-            margin-bottom: 15px;
-            font-size: 1.3em;
+        .card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
         
+        .card-header {
+            border-bottom: 1px solid #f3f4f6;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #111827;
+            letter-spacing: -0.025em;
+        }
+        
+        .card-subtitle {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .card-content {
+            padding: 2rem;
+        }
+        
+        /* Status */
+        .status {
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+        }
+        
+        .status.disconnected {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .status.connecting {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fed7aa;
+        }
+        
+        .status.connected {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        
+        /* Form Elements */
         input, button, textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            font-size: 1rem;
             transition: all 0.3s ease;
+            font-family: inherit;
         }
         
         input:focus, textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #6b7280;
+            box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
         }
         
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #111827;
             color: white;
             border: none;
             cursor: pointer;
-            font-weight: 600;
-            margin-top: 10px;
-            transform: translateY(0);
+            font-weight: 500;
+            margin-top: 0.75rem;
+            transition: all 0.3s ease;
         }
         
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        button:hover:not(:disabled) {
+            background: #1f2937;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
         button:disabled {
-            background: #ccc;
+            background: #9ca3af;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
         
+        .btn-secondary {
+            background: transparent !important;
+            color: #6b7280 !important;
+            border: 1px solid #d1d5db !important;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            color: #111827 !important;
+            background: #f3f4f6 !important;
+        }
+        
+        /* Message Section */
         .message-section {
-            margin-top: 30px;
+            grid-column: 1 / -1;
         }
         
         .input-area {
@@ -136,87 +227,208 @@
         }
         
         textarea {
-            height: 120px;
+            height: 6rem;
             resize: vertical;
-            font-family: inherit;
-            padding-right: 120px; /* ボタン用のスペース */
+            padding-right: 5rem;
         }
         
         .input-buttons {
             position: absolute;
-            right: 10px;
-            top: 10px;
+            right: 0.5rem;
+            top: 0.5rem;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 0.25rem;
         }
         
         .input-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 0.625rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
             margin: 0;
-        }
-        
-        .input-btn:hover {
-            transform: scale(1.1);
+            padding: 0;
         }
         
         .file-btn {
-            background: #28a745;
+            background: #16a34a;
             color: white;
+            border-color: #16a34a;
         }
         
         .paste-btn {
-            background: #17a2b8;
+            background: #0ea5e9;
             color: white;
+            border-color: #0ea5e9;
         }
         
-        #fileInput {
-            display: none;
+        .input-btn:hover:not(:disabled) {
+            transform: scale(1.05);
         }
         
+        /* Drop Zone */
         .drop-zone {
-            border: 2px dashed #ddd;
-            border-radius: 10px;
-            padding: 20px;
+            border: 2px dashed #d1d5db;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
             text-align: center;
-            color: #666;
-            margin: 10px 0;
+            color: #6b7280;
+            margin: 1rem 0;
             transition: all 0.3s ease;
+            font-size: 0.875rem;
         }
         
         .drop-zone.dragover {
-            border-color: #667eea;
-            background: #f8f9ff;
-            color: #667eea;
+            border-color: #6b7280;
+            background: #f9fafb;
+            color: #111827;
+        }
+        
+        /* File Preview */
+        .preview-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .file-details {
+            flex: 1;
+        }
+        
+        .file-icon {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 0.625rem;
+            font-weight: 700;
+            color: #6b7280;
         }
         
         .image-preview {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 10px;
-            margin: 10px 0;
+            max-width: 9rem;
+            max-height: 9rem;
+            border-radius: 0.5rem;
             cursor: pointer;
         }
         
-        .image-message {
-            max-width: 300px;
+        .file-info {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
         }
         
-        .image-message img {
-            max-width: 100%;
-            border-radius: 10px;
+        .clear-btn {
+            margin-top: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
             cursor: pointer;
         }
         
+        /* Message History */
+        .message-history {
+            background: #f9fafb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            max-height: 18rem;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .message {
+            margin: 0.75rem 0;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .message.sent {
+            background: #111827;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.received {
+            background: #e0f2fe;
+            color: #0277bd;
+            margin-right: auto;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.375rem;
+        }
+        
+        /* File Messages */
+        .file-message {
+            max-width: 18rem;
+        }
+        
+        .file-info-display {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin: 0.375rem 0;
+        }
+        
+        .file-download {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            margin-top: 0.75rem;
+        }
+        
+        .file-download:hover {
+            background: #1d4ed8;
+        }
+        
+        /* QR Code */
+        .qr-code {
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        
+        .peer-id-display {
+            background: #f0f8ff;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin: 0.75rem 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            word-break: break-all;
+            border: 1px solid #e0f2fe;
+            font-size: 0.875rem;
+        }
+        
+        /* Image Overlay */
         .image-overlay {
             position: fixed;
             top: 0;
@@ -234,127 +446,16 @@
         .image-overlay img {
             max-width: 90%;
             max-height: 90%;
-            border-radius: 10px;
+            border-radius: 0.75rem;
         }
         
-        .file-info {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .file-icon {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 24px;
-        }
-        
-        .file-message {
-            max-width: 300px;
-        }
-        
-        .file-info-display {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 5px 0;
-        }
-        
-        .file-download {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-        
-        .file-download:hover {
-            background: #0056b3;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: #e9ecef;
-            border-radius: 2px;
-            margin: 10px 0;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: #667eea;
-            transition: width 0.3s ease;
-        }
-        
-        .message-history {
-            background: #f8f9ff;
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 2px solid #e1e8ff;
-        }
-        
-        .message {
-            margin: 10px 0;
-            padding: 10px 15px;
-            border-radius: 20px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-        
-        .message.sent {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            margin-left: auto;
-            text-align: right;
-        }
-        
-        .message.received {
-            background: #e3f2fd;
-            color: #1565c0;
-            margin-right: auto;
-        }
-        
-        .message-time {
-            font-size: 0.8em;
-            opacity: 0.7;
-            margin-top: 5px;
-        }
-        
-        .qr-code {
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .peer-id-display {
-            background: #f0f8ff;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-family: monospace;
-            word-break: break-all;
-            border: 2px solid #e1e8ff;
-        }
-        
+        /* Loading */
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
+            width: 1rem;
+            height: 1rem;
             border: 2px solid #f3f3f3;
-            border-top: 2px solid #667eea;
+            border-top: 2px solid #6b7280;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -363,78 +464,205 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .container {
+                padding: 2rem 1rem;
+            }
+            
+            .nav-content {
+                padding: 1rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h2 {
+                font-size: 2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .card-header, .card-content {
+                padding: 1.5rem;
+            }
+            
+            textarea {
+                height: 5rem;
+                font-size: 16px; /* Prevent iOS zoom */
+            }
+            
+            .input-buttons {
+                right: 0.375rem;
+                top: 0.375rem;
+            }
+            
+            .input-btn {
+                width: 1.75rem;
+                height: 1.75rem;
+                font-size: 0.5rem;
+            }
+            
+            .preview-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            input, button, textarea {
+                font-size: 16px; /* Prevent iOS zoom */
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem 0.75rem;
+            }
+            
+            .header {
+                margin-bottom: 2rem;
+            }
+            
+            .header h2 {
+                font-size: 1.75rem;
+            }
+            
+            .card-header, .card-content {
+                padding: 1rem;
+            }
+            
+            textarea {
+                padding-right: 4rem;
+            }
+            
+            .input-btn {
+                width: 1.5rem;
+                height: 1.5rem;
+                font-size: 0.45rem;
+            }
+        }
+        
+        #fileInput {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📱💻 P2P テキスト共有</h1>
-        
-        <div class="status disconnected" id="status">
-            接続待機中...
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <h1>P2P File Share</h1>
+            <div class="nav-status">
+                <span class="status-text">Powered by WebRTC</span>
+                <div class="status-indicator"></div>
+            </div>
         </div>
-        
-        <div class="connection-section">
+    </nav>
+
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h2>Secure Peer-to-Peer File Transfer</h2>
+            <p>Share files directly between devices with end-to-end encryption and zero server storage</p>
+        </div>
+
+        <!-- Status -->
+        <div class="status disconnected" id="status">
+            Waiting for connection...
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Connection Setup -->
             <div class="card">
-                <h3>🎯 接続を開始</h3>
-                <button onclick="createConnection()" id="createBtn">新しい接続を作成</button>
-                <div id="myPeerId" class="peer-id-display" style="display: none;"></div>
-                <div id="qrCode" class="qr-code"></div>
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Start Connection</h3>
+                        <p class="card-subtitle">Create a new peer connection</p>
+                    </div>
+                    <button class="btn-secondary" onclick="createConnection()" id="createBtn">Create</button>
+                </div>
+                <div class="card-content">
+                    <div id="myPeerId" class="peer-id-display" style="display: none;"></div>
+                    <div id="qrCode" class="qr-code"></div>
+                </div>
             </div>
             
             <div class="card">
-                <h3>🔗 相手に接続</h3>
-                <input type="text" id="peerIdInput" placeholder="相手のPeer IDを入力">
-                <button onclick="connectToPeer()" id="connectBtn">接続</button>
-            </div>
-        </div>
-        
-        <div class="message-section">
-            <div class="card">
-                <h3>💬 メッセージ・ファイル送信</h3>
-                
-                <div class="drop-zone" id="dropZone">
-                    📎 ここにファイルをドラッグ&ドロップ、または下のボタンで選択
-                </div>
-                
-                <div class="input-area">
-                    <textarea id="messageInput" placeholder="メッセージを入力してください..." disabled></textarea>
-                    <div class="input-buttons">
-                        <button class="input-btn file-btn" onclick="selectFile()" title="ファイルを選択" disabled id="fileBtn">📁</button>
-                        <button class="input-btn paste-btn" onclick="pasteFromClipboard()" title="クリップボードから貼り付け" disabled id="pasteBtn">📋</button>
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Join Connection</h3>
+                        <p class="card-subtitle">Connect to an existing peer</p>
                     </div>
                 </div>
-                
-                <input type="file" id="fileInput" onchange="handleFileSelect(event)">
-                
-                <div id="filePreview" style="display: none;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
-                        <div id="previewContainer">
-                            <img id="previewImg" class="image-preview" style="display: none;">
-                            <div id="fileIcon" class="file-icon" style="display: none;">📄</div>
-                        </div>
+                <div class="card-content">
+                    <input type="text" id="peerIdInput" placeholder="Enter Peer ID">
+                    <button onclick="connectToPeer()" id="connectBtn">Connect</button>
+                </div>
+            </div>
+            
+            <!-- Message & File Section -->
+            <div class="message-section">
+                <div class="card">
+                    <div class="card-header">
                         <div>
-                            <div id="fileName"></div>
-                            <div id="fileSize" class="file-info"></div>
-                            <div id="fileType" class="file-info"></div>
-                            <button onclick="clearPreview()" style="margin-top: 5px; padding: 5px 10px; font-size: 0.8em;">削除</button>
+                            <h3 class="card-title">Messages & Files</h3>
+                            <p class="card-subtitle">Send text messages and any file type</p>
                         </div>
                     </div>
-                </div>
-                
-                <button onclick="sendMessage()" id="sendBtn" disabled>送信</button>
-                
-                <div class="message-history" id="messageHistory">
-                    <div style="text-align: center; color: #666; font-style: italic;">
-                        接続が確立されるとメッセージのやり取りができます
+                    <div class="card-content">
+                        <div class="drop-zone" id="dropZone">
+                            Drop files here or use the buttons below
+                        </div>
+                        
+                        <div class="input-area">
+                            <textarea id="messageInput" placeholder="Type your message..." disabled></textarea>
+                            <div class="input-buttons">
+                                <button class="input-btn file-btn" onclick="selectFile()" title="Select File" disabled id="fileBtn">FILE</button>
+                                <button class="input-btn paste-btn" onclick="pasteText()" title="Paste Text" disabled id="pasteBtn">PASTE</button>
+                            </div>
+                        </div>
+                        
+                        <input type="file" id="fileInput" onchange="handleFileSelect(event)">
+                        
+                        <div id="filePreview" style="display: none;">
+                            <div class="preview-container">
+                                <div id="previewContainer">
+                                    <img id="previewImg" class="image-preview" style="display: none;">
+                                    <div id="fileIcon" class="file-icon" style="display: none;">FILE</div>
+                                </div>
+                                <div class="file-details">
+                                    <div id="fileName"></div>
+                                    <div id="fileSize" class="file-info"></div>
+                                    <div id="fileType" class="file-info"></div>
+                                    <button onclick="clearPreview()" class="clear-btn">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="sendMessage()" id="sendBtn" disabled>Send</button>
+                        
+                        <div class="message-history" id="messageHistory">
+                            <div style="text-align: center; color: #6b7280; font-style: italic;">
+                                Connect to start messaging and file sharing
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- 画像拡大表示用オーバーレイ -->
-        <div class="image-overlay" id="imageOverlay" onclick="closeImageOverlay()">
-            <img id="overlayImg">
-        </div>
+    </div>
+    
+    <!-- Image Overlay -->
+    <div class="image-overlay" id="imageOverlay" onclick="closeImageOverlay()">
+        <img id="overlayImg">
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
@@ -474,17 +702,16 @@
         }
         
         function generatePeerId() {
-            return 'text-' + Math.random().toString(36).substr(2, 9);
+            return 'share-' + Math.random().toString(36).substr(2, 9);
         }
         
         function createConnection() {
             const peerId = generatePeerId();
             
-            updateStatus('接続を初期化中...', 'connecting');
-            createBtn.innerHTML = '<span class="loading"></span> 初期化中...';
+            updateStatus('Initializing connection...', 'connecting');
+            createBtn.innerHTML = '<span class="loading"></span> Creating...';
             createBtn.disabled = true;
             
-            // 複数のPeerJSサーバーを試行
             const peerOptions = {
                 config: {
                     iceServers: [
@@ -495,38 +722,35 @@
                 }
             };
             
-            // デフォルトのPeerJSクラウドサーバーを使用（最も安定）
             peer = new Peer(peerId, peerOptions);
             
             peer.on('open', (id) => {
                 console.log('My peer ID is: ' + id);
-                myPeerIdEl.textContent = `あなたのID: ${id}`;
+                myPeerIdEl.textContent = `Your ID: ${id}`;
                 myPeerIdEl.style.display = 'block';
                 
-                // QRコードを生成
                 createQRCode(id);
                 
-                updateStatus('接続待機中 - 相手があなたのIDに接続するのを待っています', 'connecting');
-                createBtn.textContent = '接続作成済み';
+                updateStatus('Waiting for peer connection - Share your ID or QR code', 'connecting');
+                createBtn.textContent = 'Connection Created';
                 connectBtn.disabled = false;
             });
             
             peer.on('connection', (conn) => {
                 connection = conn;
                 setupConnection();
-                updateStatus('接続が確立されました！', 'connected');
+                updateStatus('Connection established successfully!', 'connected');
             });
             
             peer.on('error', (err) => {
                 console.error('Peer error:', err);
-                updateStatus('エラーが発生しました: ' + err.message, 'disconnected');
+                updateStatus('Error occurred: ' + err.message, 'disconnected');
                 resetButtons();
             });
         }
         
         function createQRCode(peerId) {
-            // 現在のページURLにpeerIdをパラメータとして追加
-            const currentUrl = window.location.href.split('?')[0]; // クエリパラメータを除去
+            const currentUrl = window.location.href.split('?')[0];
             const qrUrl = `${currentUrl}?connect=${peerId}`;
             
             const canvas = document.createElement('canvas');
@@ -534,7 +758,7 @@
                 element: canvas,
                 value: qrUrl,
                 size: 200,
-                foreground: '#667eea',
+                foreground: '#111827',
                 background: 'white'
             });
             
@@ -542,29 +766,28 @@
             qrCodeEl.appendChild(canvas);
             
             const label = document.createElement('div');
-            label.textContent = 'QRコードをスキャンして自動接続';
+            label.textContent = 'Scan QR code for instant connection';
             label.style.marginTop = '10px';
-            label.style.fontSize = '0.9em';
-            label.style.color = '#666';
+            label.style.fontSize = '0.875rem';
+            label.style.color = '#6b7280';
             qrCodeEl.appendChild(label);
             
-            // URLも表示（手動コピー用）
             const urlDisplay = document.createElement('div');
             urlDisplay.textContent = qrUrl;
             urlDisplay.style.marginTop = '10px';
-            urlDisplay.style.fontSize = '0.8em';
-            urlDisplay.style.color = '#999';
+            urlDisplay.style.fontSize = '0.75rem';
+            urlDisplay.style.color = '#9ca3af';
             urlDisplay.style.wordBreak = 'break-all';
             urlDisplay.style.padding = '8px';
-            urlDisplay.style.background = '#f8f9fa';
-            urlDisplay.style.borderRadius = '5px';
+            urlDisplay.style.background = '#f9fafb';
+            urlDisplay.style.borderRadius = '6px';
             urlDisplay.style.cursor = 'pointer';
-            urlDisplay.title = 'クリックしてコピー';
+            urlDisplay.title = 'Click to copy';
             
             urlDisplay.onclick = () => {
                 navigator.clipboard.writeText(qrUrl).then(() => {
                     const originalText = urlDisplay.textContent;
-                    urlDisplay.textContent = '✅ URLをコピーしました';
+                    urlDisplay.textContent = '✓ URL copied to clipboard';
                     setTimeout(() => {
                         urlDisplay.textContent = originalText;
                     }, 2000);
@@ -577,7 +800,7 @@
         function connectToPeer() {
             const targetPeerId = peerIdInput.value.trim();
             if (!targetPeerId) {
-                alert('相手のPeer IDを入力してください');
+                alert('Please enter a peer ID');
                 return;
             }
             
@@ -600,7 +823,7 @@
                 
                 peer.on('error', (err) => {
                     console.error('Peer error:', err);
-                    updateStatus('エラーが発生しました: ' + err.message, 'disconnected');
+                    updateStatus('Error occurred: ' + err.message, 'disconnected');
                     resetButtons();
                 });
             } else {
@@ -609,8 +832,8 @@
         }
         
         function connectToPeerDirect(targetPeerId) {
-            updateStatus('接続中...', 'connecting');
-            connectBtn.innerHTML = '<span class="loading"></span> 接続中...';
+            updateStatus('Connecting...', 'connecting');
+            connectBtn.innerHTML = '<span class="loading"></span> Connecting...';
             connectBtn.disabled = true;
             
             connection = peer.connect(targetPeerId);
@@ -620,16 +843,16 @@
         function setupConnection() {
             connection.on('open', () => {
                 isConnected = true;
-                updateStatus('接続が確立されました！', 'connected');
+                updateStatus('Connection established successfully!', 'connected');
                 messageInput.disabled = false;
                 sendBtn.disabled = false;
                 fileBtn.disabled = false;
                 pasteBtn.disabled = false;
-                connectBtn.textContent = '接続済み';
+                connectBtn.textContent = 'Connected';
                 createBtn.disabled = true;
                 
                 clearMessageHistory();
-                addSystemMessage('接続が確立されました。メッセージの送受信が可能です。');
+                addSystemMessage('Connection established. You can now send messages and files.');
             });
             
             connection.on('data', (data) => {
@@ -645,18 +868,18 @@
             
             connection.on('close', () => {
                 isConnected = false;
-                updateStatus('接続が切断されました', 'disconnected');
+                updateStatus('Connection closed', 'disconnected');
                 messageInput.disabled = true;
                 sendBtn.disabled = true;
                 fileBtn.disabled = true;
                 pasteBtn.disabled = true;
                 resetButtons();
-                addSystemMessage('接続が切断されました。');
+                addSystemMessage('Connection closed.');
             });
             
             connection.on('error', (err) => {
                 console.error('Connection error:', err);
-                updateStatus('接続エラー: ' + err.message, 'disconnected');
+                updateStatus('Connection error: ' + err.message, 'disconnected');
                 resetButtons();
             });
         }
@@ -667,7 +890,6 @@
             
             if (!isConnected) return;
             
-            // ファイルが選択されている場合
             if (selectedFile) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -683,7 +905,6 @@
                         timestamp: timestamp
                     };
                     
-                    // メッセージがあれば一緒に送信
                     if (message) {
                         data.message = message;
                     }
@@ -701,7 +922,6 @@
                 };
                 reader.readAsDataURL(selectedFile);
             }
-            // テキストメッセージのみの場合
             else if (message) {
                 const data = {
                     type: 'text',
@@ -740,6 +960,9 @@
             const imgEl = document.createElement('img');
             imgEl.src = imageData;
             imgEl.onclick = () => showImageOverlay(imageData);
+            imgEl.style.maxWidth = '100%';
+            imgEl.style.borderRadius = '0.5rem';
+            imgEl.style.cursor = 'pointer';
             
             const fileInfoEl = document.createElement('div');
             fileInfoEl.className = 'file-info';
@@ -752,11 +975,10 @@
             messageEl.appendChild(imgEl);
             messageEl.appendChild(fileInfoEl);
             
-            // メッセージがある場合は追加
             if (message) {
                 const messageText = document.createElement('div');
                 messageText.textContent = message;
-                messageText.style.marginTop = '5px';
+                messageText.style.marginTop = '0.5rem';
                 messageEl.appendChild(messageText);
             }
             
@@ -764,6 +986,85 @@
             
             messageHistory.appendChild(messageEl);
             messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        function addFileMessage(fileData, filename, filesize, filetype, type, timestamp, message = '') {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type} file-message`;
+            
+            const fileInfoEl = document.createElement('div');
+            fileInfoEl.className = 'file-info-display';
+            
+            const fileIconEl = document.createElement('div');
+            fileIconEl.className = 'file-icon';
+            fileIconEl.style.fontSize = '0.75rem';
+            fileIconEl.style.fontWeight = 'bold';
+            fileIconEl.style.textAlign = 'center';
+            fileIconEl.style.marginBottom = '0.75rem';
+            fileIconEl.textContent = getFileIcon(filetype);
+            
+            const fileNameEl = document.createElement('div');
+            fileNameEl.style.fontWeight = '600';
+            fileNameEl.style.marginBottom = '0.375rem';
+            fileNameEl.textContent = filename;
+            
+            const fileDetailsEl = document.createElement('div');
+            fileDetailsEl.className = 'file-info';
+            fileDetailsEl.innerHTML = `${getFileTypeName(filetype)} • ${filesize}`;
+            
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'file-download';
+            downloadBtn.textContent = 'Download';
+            downloadBtn.onclick = () => downloadFile(fileData, filename);
+            
+            fileInfoEl.appendChild(fileIconEl);
+            fileInfoEl.appendChild(fileNameEl);
+            fileInfoEl.appendChild(fileDetailsEl);
+            fileInfoEl.appendChild(downloadBtn);
+            
+            const timeEl = document.createElement('div');
+            timeEl.className = 'message-time';
+            timeEl.textContent = timestamp;
+            
+            messageEl.appendChild(fileInfoEl);
+            
+            if (message) {
+                const messageText = document.createElement('div');
+                messageText.textContent = message;
+                messageText.style.marginTop = '0.75rem';
+                messageText.style.padding = '0.75rem';
+                messageText.style.background = 'rgba(255,255,255,0.5)';
+                messageText.style.borderRadius = '0.5rem';
+                messageEl.appendChild(messageText);
+            }
+            
+            messageEl.appendChild(timeEl);
+            
+            messageHistory.appendChild(messageEl);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        function addSystemMessage(message) {
+            const messageEl = document.createElement('div');
+            messageEl.style.textAlign = 'center';
+            messageEl.style.color = '#6b7280';
+            messageEl.style.fontStyle = 'italic';
+            messageEl.style.margin = '0.75rem 0';
+            messageEl.style.fontSize = '0.875rem';
+            messageEl.textContent = message;
+            messageHistory.appendChild(messageEl);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        function clearMessageHistory() {
+            messageHistory.innerHTML = '';
+        }
+        
+        function resetButtons() {
+            createBtn.textContent = 'Create';
+            createBtn.disabled = false;
+            connectBtn.textContent = 'Connect';
+            connectBtn.disabled = false;
         }
         
         function selectFile() {
@@ -801,112 +1102,48 @@
             filePreview.style.display = 'block';
         }
         
-        function getFileIcon(mimeType) {
-            if (mimeType.startsWith('image/')) return '🖼️';
-            if (mimeType.startsWith('video/')) return '🎥';
-            if (mimeType.startsWith('audio/')) return '🎵';
-            if (mimeType.includes('pdf')) return '📕';
-            if (mimeType.includes('word')) return '📘';
-            if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📗';
-            if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙';
-            if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '🗜️';
-            if (mimeType.includes('text')) return '📄';
-            if (mimeType.includes('json') || mimeType.includes('xml')) return '⚙️';
-            return '📄';
-        }
-        
-        function getFileTypeName(mimeType) {
-            const typeMap = {
-                'application/pdf': 'PDF文書',
-                'application/msword': 'Word文書',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word文書',
-                'application/vnd.ms-excel': 'Excel文書',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel文書',
-                'application/vnd.ms-powerpoint': 'PowerPoint文書',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint文書',
-                'application/zip': 'ZIP圧縮ファイル',
-                'application/x-rar-compressed': 'RAR圧縮ファイル',
-                'text/plain': 'テキストファイル',
-                'text/csv': 'CSVファイル',
-                'application/json': 'JSONファイル',
-                'text/xml': 'XMLファイル'
-            };
-            
-            if (mimeType.startsWith('image/')) return '画像ファイル';
-            if (mimeType.startsWith('video/')) return '動画ファイル';
-            if (mimeType.startsWith('audio/')) return '音声ファイル';
-            
-            return typeMap[mimeType] || 'ファイル';
-        }
-        
-        function addFileMessage(fileData, filename, filesize, filetype, type, timestamp, message = '') {
-            const messageEl = document.createElement('div');
-            messageEl.className = `message ${type} file-message`;
-            
-            const fileInfoEl = document.createElement('div');
-            fileInfoEl.className = 'file-info-display';
-            
-            const fileIconEl = document.createElement('div');
-            fileIconEl.style.fontSize = '40px';
-            fileIconEl.style.textAlign = 'center';
-            fileIconEl.style.marginBottom = '10px';
-            fileIconEl.textContent = getFileIcon(filetype);
-            
-            const fileNameEl = document.createElement('div');
-            fileNameEl.style.fontWeight = 'bold';
-            fileNameEl.style.marginBottom = '5px';
-            fileNameEl.textContent = filename;
-            
-            const fileDetailsEl = document.createElement('div');
-            fileDetailsEl.className = 'file-info';
-            fileDetailsEl.innerHTML = `${getFileTypeName(filetype)} • ${filesize}`;
-            
-            const downloadBtn = document.createElement('button');
-            downloadBtn.className = 'file-download';
-            downloadBtn.textContent = 'ダウンロード';
-            downloadBtn.onclick = () => downloadFile(fileData, filename);
-            
-            fileInfoEl.appendChild(fileIconEl);
-            fileInfoEl.appendChild(fileNameEl);
-            fileInfoEl.appendChild(fileDetailsEl);
-            fileInfoEl.appendChild(downloadBtn);
-            
-            const timeEl = document.createElement('div');
-            timeEl.className = 'message-time';
-            timeEl.textContent = timestamp;
-            
-            messageEl.appendChild(fileInfoEl);
-            
-            // メッセージがある場合は追加
-            if (message) {
-                const messageText = document.createElement('div');
-                messageText.textContent = message;
-                messageText.style.marginTop = '10px';
-                messageText.style.padding = '10px';
-                messageText.style.background = 'rgba(255,255,255,0.5)';
-                messageText.style.borderRadius = '8px';
-                messageEl.appendChild(messageText);
-            }
-            
-            messageEl.appendChild(timeEl);
-            
-            messageHistory.appendChild(messageEl);
-            messageHistory.scrollTop = messageHistory.scrollHeight;
-        }
-        
-        function downloadFile(fileData, filename) {
-            const link = document.createElement('a');
-            link.href = fileData;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
         function clearPreview() {
             selectedFile = null;
             filePreview.style.display = 'none';
             fileInput.value = '';
+        }
+        
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) return 'IMG';
+            if (mimeType.startsWith('video/')) return 'VID';
+            if (mimeType.startsWith('audio/')) return 'AUD';
+            if (mimeType.includes('pdf')) return 'PDF';
+            if (mimeType.includes('word')) return 'DOC';
+            if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'XLS';
+            if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'PPT';
+            if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return 'ZIP';
+            if (mimeType.includes('text')) return 'TXT';
+            if (mimeType.includes('json') || mimeType.includes('xml')) return 'DATA';
+            return 'FILE';
+        }
+        
+        function getFileTypeName(mimeType) {
+            const typeMap = {
+                'application/pdf': 'PDF Document',
+                'application/msword': 'Word Document',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+                'application/vnd.ms-excel': 'Excel Spreadsheet',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
+                'application/vnd.ms-powerpoint': 'PowerPoint Presentation',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint Presentation',
+                'application/zip': 'ZIP Archive',
+                'application/x-rar-compressed': 'RAR Archive',
+                'text/plain': 'Text File',
+                'text/csv': 'CSV File',
+                'application/json': 'JSON File',
+                'text/xml': 'XML File'
+            };
+            
+            if (mimeType.startsWith('image/')) return 'Image File';
+            if (mimeType.startsWith('video/')) return 'Video File';
+            if (mimeType.startsWith('audio/')) return 'Audio File';
+            
+            return typeMap[mimeType] || 'File';
         }
         
         function formatFileSize(bytes) {
@@ -926,28 +1163,31 @@
             imageOverlay.style.display = 'none';
         }
         
-        async function pasteFromClipboard() {
+        function downloadFile(fileData, filename) {
+            const link = document.createElement('a');
+            link.href = fileData;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        async function pasteText() {
             try {
-                const clipboardItems = await navigator.clipboard.read();
-                for (const clipboardItem of clipboardItems) {
-                    for (const type of clipboardItem.types) {
-                        if (type.startsWith('image/')) {
-                            const blob = await clipboardItem.getType(type);
-                            const file = new File([blob], `clipboard-image-${Date.now()}.png`, { type: type });
-                            selectedFile = file;
-                            showImagePreview(file);
-                            return;
-                        }
-                    }
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    messageInput.value = text;
+                    messageInput.focus();
+                } else {
+                    alert('No text found in clipboard.');
                 }
-                alert('クリップボードに画像が見つかりませんでした。');
             } catch (err) {
-                console.error('クリップボードアクセスエラー:', err);
-                alert('クリップボードにアクセスできませんでした。ブラウザの設定を確認してください。');
+                console.error('Clipboard access error:', err);
+                alert('Could not access clipboard. Please check browser permissions.');
             }
         }
         
-        // ドラッグ&ドロップ機能
+        // Drag and drop functionality
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
@@ -969,51 +1209,35 @@
             }
         });
         
-        function addSystemMessage(message) {
-            const messageEl = document.createElement('div');
-            messageEl.style.textAlign = 'center';
-            messageEl.style.color = '#666';
-            messageEl.style.fontStyle = 'italic';
-            messageEl.style.margin = '10px 0';
-            messageEl.textContent = message;
-            messageHistory.appendChild(messageEl);
-            messageHistory.scrollTop = messageHistory.scrollHeight;
-        }
-        
-        function clearMessageHistory() {
-            messageHistory.innerHTML = '';
-        }
-        
-        function resetButtons() {
-            createBtn.textContent = '新しい接続を作成';
-            createBtn.disabled = false;
-            connectBtn.textContent = '接続';
-            connectBtn.disabled = false;
-        }
-        
-        // ページ読み込み時にURLパラメータをチェック
+        // Auto-connect from URL parameter
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const connectToPeerId = urlParams.get('connect');
             
             if (connectToPeerId) {
-                // URLパラメータに接続先IDがある場合、自動で接続開始
-                updateStatus('QRコードから自動接続を開始中...', 'connecting');
+                updateStatus('Starting auto-connection from QR code...', 'connecting');
                 peerIdInput.value = connectToPeerId;
                 
-                // 少し遅延させてDOM要素が準備されるのを待つ
                 setTimeout(() => {
                     connectToPeer();
                     
-                    // 接続後にURLをクリーンアップ（オプション）
                     const cleanUrl = window.location.href.split('?')[0];
                     window.history.replaceState({}, document.title, cleanUrl);
                     
-                    // 自動接続の説明を表示
-                    addSystemMessage('QRコードから自動接続を開始しました。');
+                    const messageHistory = document.getElementById('messageHistory');
+                    const systemMsg = document.createElement('div');
+                    systemMsg.style.textAlign = 'center';
+                    systemMsg.style.color = '#6b7280';
+                    systemMsg.style.fontStyle = 'italic';
+                    systemMsg.style.margin = '0.75rem 0';
+                    systemMsg.style.fontSize = '0.875rem';
+                    systemMsg.textContent = 'Auto-connection started from QR code.';
+                    messageHistory.appendChild(systemMsg);
                 }, 1000);
             }
         });
+        
+        // Enter key to send message
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -1021,7 +1245,18 @@
             }
         });
         
-        // ページ離脱時にクリーンアップ
+        // Ctrl+V for text paste
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v' && isConnected) {
+                if (document.activeElement === messageInput) {
+                    return;
+                }
+                e.preventDefault();
+                pasteText();
+            }
+        });
+        
+        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (connection) {
                 connection.close();
