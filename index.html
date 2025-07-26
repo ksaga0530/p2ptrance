@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P テキスト共有</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .status.disconnected {
+            background: #fee;
+            color: #c33;
+            border: 2px solid #fcc;
+        }
+        
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .connection-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .connection-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f0f0f0;
+        }
+        
+        .card h3 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        input, button, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transform: translateY(0);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .message-section {
+            margin-top: 30px;
+        }
+        
+        textarea {
+            height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .message-history {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #e1e8ff;
+        }
+        
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .message.sent {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.received {
+            background: #e3f2fd;
+            color: #1565c0;
+            margin-right: auto;
+        }
+        
+        .message-time {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .peer-id-display {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+            border: 2px solid #e1e8ff;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱💻 P2P テキスト共有</h1>
+        
+        <div class="status disconnected" id="status">
+            接続待機中...
+        </div>
+        
+        <div class="connection-section">
+            <div class="card">
+                <h3>🎯 接続を開始</h3>
+                <button onclick="createConnection()" id="createBtn">新しい接続を作成</button>
+                <div id="myPeerId" class="peer-id-display" style="display: none;"></div>
+                <div id="qrCode" class="qr-code"></div>
+            </div>
+            
+            <div class="card">
+                <h3>🔗 相手に接続</h3>
+                <input type="text" id="peerIdInput" placeholder="相手のPeer IDを入力">
+                <button onclick="connectToPeer()" id="connectBtn">接続</button>
+            </div>
+        </div>
+        
+        <div class="message-section">
+            <div class="card">
+                <h3>💬 メッセージ</h3>
+                <textarea id="messageInput" placeholder="メッセージを入力してください..." disabled></textarea>
+                <button onclick="sendMessage()" id="sendBtn" disabled>送信</button>
+                
+                <div class="message-history" id="messageHistory">
+                    <div style="text-align: center; color: #666; font-style: italic;">
+                        接続が確立されるとメッセージのやり取りができます
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <script>
+        let peer = null;
+        let connection = null;
+        let isConnected = false;
+        
+        const statusEl = document.getElementById('status');
+        const createBtn = document.getElementById('createBtn');
+        const connectBtn = document.getElementById('connectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const messageInput = document.getElementById('messageInput');
+        const messageHistory = document.getElementById('messageHistory');
+        const myPeerIdEl = document.getElementById('myPeerId');
+        const peerIdInput = document.getElementById('peerIdInput');
+        const qrCodeEl = document.getElementById('qrCode');
+        
+        function updateStatus(message, type) {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        function generatePeerId() {
+            return 'text-' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function createConnection() {
+            const peerId = generatePeerId();
+            
+            updateStatus('接続を初期化中...', 'connecting');
+            createBtn.innerHTML = '<span class="loading"></span> 初期化中...';
+            createBtn.disabled = true;
+            
+            // 複数のPeerJSサーバーを試行
+            const peerOptions = {
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ]
+                }
+            };
+            
+            // デフォルトのPeerJSクラウドサーバーを使用（最も安定）
+            peer = new Peer(peerId, peerOptions);
+            
+            peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                myPeerIdEl.textContent = `あなたのID: ${id}`;
+                myPeerIdEl.style.display = 'block';
+                
+                // QRコードを生成
+                createQRCode(id);
+                
+                updateStatus('接続待機中 - 相手があなたのIDに接続するのを待っています', 'connecting');
+                createBtn.textContent = '接続作成済み';
+                connectBtn.disabled = false;
+            });
+            
+            peer.on('connection', (conn) => {
+                connection = conn;
+                setupConnection();
+                updateStatus('接続が確立されました！', 'connected');
+            });
+            
+            peer.on('error', (err) => {
+                console.error('Peer error:', err);
+                updateStatus('エラーが発生しました: ' + err.message, 'disconnected');
+                resetButtons();
+            });
+        }
+        
+        function createQRCode(peerId) {
+            const canvas = document.createElement('canvas');
+            const qr = new QRious({
+                element: canvas,
+                value: peerId,
+                size: 200,
+                foreground: '#667eea',
+                background: 'white'
+            });
+            
+            qrCodeEl.innerHTML = '';
+            qrCodeEl.appendChild(canvas);
+            
+            const label = document.createElement('div');
+            label.textContent = 'QRコードをスキャンして接続';
+            label.style.marginTop = '10px';
+            label.style.fontSize = '0.9em';
+            label.style.color = '#666';
+            qrCodeEl.appendChild(label);
+        }
+        
+        function connectToPeer() {
+            const targetPeerId = peerIdInput.value.trim();
+            if (!targetPeerId) {
+                alert('相手のPeer IDを入力してください');
+                return;
+            }
+            
+            if (!peer) {
+                const peerOptions = {
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:stun2.l.google.com:19302' }
+                        ]
+                    }
+                };
+                
+                peer = new Peer(generatePeerId(), peerOptions);
+                
+                peer.on('open', () => {
+                    connectToPeerDirect(targetPeerId);
+                });
+                
+                peer.on('error', (err) => {
+                    console.error('Peer error:', err);
+                    updateStatus('エラーが発生しました: ' + err.message, 'disconnected');
+                    resetButtons();
+                });
+            } else {
+                connectToPeerDirect(targetPeerId);
+            }
+        }
+        
+        function connectToPeerDirect(targetPeerId) {
+            updateStatus('接続中...', 'connecting');
+            connectBtn.innerHTML = '<span class="loading"></span> 接続中...';
+            connectBtn.disabled = true;
+            
+            connection = peer.connect(targetPeerId);
+            setupConnection();
+        }
+        
+        function setupConnection() {
+            connection.on('open', () => {
+                isConnected = true;
+                updateStatus('接続が確立されました！', 'connected');
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                connectBtn.textContent = '接続済み';
+                createBtn.disabled = true;
+                
+                clearMessageHistory();
+                addSystemMessage('接続が確立されました。メッセージの送受信が可能です。');
+            });
+            
+            connection.on('data', (data) => {
+                console.log('Received:', data);
+                addMessage(data.message, 'received', data.timestamp);
+            });
+            
+            connection.on('close', () => {
+                isConnected = false;
+                updateStatus('接続が切断されました', 'disconnected');
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+                resetButtons();
+                addSystemMessage('接続が切断されました。');
+            });
+            
+            connection.on('error', (err) => {
+                console.error('Connection error:', err);
+                updateStatus('接続エラー: ' + err.message, 'disconnected');
+                resetButtons();
+            });
+        }
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || !isConnected) return;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const data = {
+                message: message,
+                timestamp: timestamp
+            };
+            
+            connection.send(data);
+            addMessage(message, 'sent', timestamp);
+            messageInput.value = '';
+        }
+        
+        function addMessage(message, type, timestamp) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
+            
+            const messageText = document.createElement('div');
+            messageText.textContent = message;
+            
+            const timeEl = document.createElement('div');
+            timeEl.className = 'message-time';
+            timeEl.textContent = timestamp;
+            
+            messageEl.appendChild(messageText);
+            messageEl.appendChild(timeEl);
+            
+            messageHistory.appendChild(messageEl);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        function addSystemMessage(message) {
+            const messageEl = document.createElement('div');
+            messageEl.style.textAlign = 'center';
+            messageEl.style.color = '#666';
+            messageEl.style.fontStyle = 'italic';
+            messageEl.style.margin = '10px 0';
+            messageEl.textContent = message;
+            messageHistory.appendChild(messageEl);
+            messageHistory.scrollTop = messageHistory.scrollHeight;
+        }
+        
+        function clearMessageHistory() {
+            messageHistory.innerHTML = '';
+        }
+        
+        function resetButtons() {
+            createBtn.textContent = '新しい接続を作成';
+            createBtn.disabled = false;
+            connectBtn.textContent = '接続';
+            connectBtn.disabled = false;
+        }
+        
+        // エンターキーでメッセージ送信
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // ページ離脱時にクリーンアップ
+        window.addEventListener('beforeunload', () => {
+            if (connection) {
+                connection.close();
+            }
+            if (peer) {
+                peer.destroy();
+            }
+        });
+    </script>
+</body>
+</html>
