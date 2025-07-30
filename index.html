@@ -362,6 +362,7 @@
             border-radius: 1rem;
             max-width: 80%;
             word-wrap: break-word;
+            white-space: pre-wrap;
         }
         
         .message.sent {
@@ -942,6 +943,20 @@
             const messageText = document.createElement('div');
             messageText.textContent = message;
             
+            // コピーボタンを追加（受信メッセージのみ）
+            if (type === 'received') {
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = '📋';
+                copyBtn.style.cssText = 'font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-left: 0.5rem; background: rgba(255,255,255,0.2); border: none; border-radius: 0.25rem; cursor: pointer; float: right;';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(message).then(() => {
+                        copyBtn.textContent = '✓';
+                        setTimeout(() => copyBtn.textContent = '📋', 1000);
+                    });
+                };
+                messageText.appendChild(copyBtn);
+            }
+            
             const timeEl = document.createElement('div');
             timeEl.className = 'message-time';
             timeEl.textContent = timestamp;
@@ -967,6 +982,14 @@
             const fileInfoEl = document.createElement('div');
             fileInfoEl.className = 'file-info';
             fileInfoEl.textContent = `${filename} (${filesize})`;
+
+            if (type === 'received') {
+                const saveBtn = document.createElement('button');
+                saveBtn.textContent = '💾 Save';
+                saveBtn.style.cssText = 'margin-top: 0.5rem; padding: 0.375rem 0.75rem; font-size: 0.75rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; cursor: pointer;';
+                saveBtn.onclick = () => downloadFile(imageData, filename);
+                messageEl.appendChild(saveBtn);
+            }
             
             const timeEl = document.createElement('div');
             timeEl.className = 'message-time';
@@ -1021,6 +1044,14 @@
             fileInfoEl.appendChild(fileNameEl);
             fileInfoEl.appendChild(fileDetailsEl);
             fileInfoEl.appendChild(downloadBtn);
+
+            if (type === 'received') {
+                const saveBtn = document.createElement('button');
+                saveBtn.textContent = '💾 Save';
+                saveBtn.style.cssText = 'margin-top: 0.5rem; padding: 0.375rem 0.75rem; font-size: 0.75rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; cursor: pointer;';
+                saveBtn.onclick = () => downloadFile(imageData, filename);
+                messageEl.appendChild(saveBtn);
+            }
             
             const timeEl = document.createElement('div');
             timeEl.className = 'message-time';
