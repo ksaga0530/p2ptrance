@@ -859,7 +859,7 @@
             connection.on('data', (data) => {
                 console.log('Received:', data);
                 if (data.type === 'text') {
-                    essage(data.message, 'received', data.timestamp);
+                    addMessage(data.message, 'received', data.timestamp);
                 } else if (data.type === 'image') {
                     addImageMessage(data.fileData, data.filename, data.filesize, 'received', data.timestamp, data.message);
                 } else if (data.type === 'file') {
@@ -931,7 +931,7 @@
                 };
                 
                 connection.send(data);
-                essage(message, 'sent', timestamp);
+                addMessage(message, 'sent', timestamp);
                 messageInput.value = '';
             }
         }
@@ -984,12 +984,6 @@
             const fileInfoEl = document.createElement('div');
             fileInfoEl.className = 'file-info';
             fileInfoEl.textContent = `${filename} (${filesize})`;
-
-            const saveBtn = document.createElement('button');
-            saveBtn.textContent = 'Save';
-            saveBtn.style.cssText = 'margin-top: 0.5rem; padding: 0.375rem 0.75rem; font-size: 0.75rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; cursor: pointer;';
-            saveBtn.onclick = () => downloadFile(imageData, filename);
-            messageEl.appendChild(saveBtn);
             
             const timeEl = document.createElement('div');
             timeEl.className = 'message-time';
@@ -1004,6 +998,12 @@
                 messageText.style.marginTop = '0.5rem';
                 messageEl.appendChild(messageText);
             }
+
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.style.cssText = 'margin-top: 0.5rem; padding: 0.375rem 0.75rem; font-size: 0.75rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; cursor: pointer;';
+            saveBtn.onclick = () => downloadFile(imageData, filename);
+            messageEl.appendChild(saveBtn);
             
             messageEl.appendChild(timeEl);
             
